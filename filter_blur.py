@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Detect blurry frames using Laplacian variance."""
+"""模糊检测阶段: 用 Laplacian 方差评估图像清晰度.
+
+方差越低说明边缘越弱, 图像越模糊. 本阶段只打标, 不删除原图.
+结果写入 intermediate/blur_results.json, 供去重与 metadata 汇总使用.
+"""
 
 from __future__ import annotations
 
@@ -13,6 +17,7 @@ from pipeline_common import add_common_args, group_by_episode, iter_episode_imag
 
 
 def compute_blur_score(image_path: Path) -> float:
+    """计算 Laplacian 方差作为 blur_score, 值越大越清晰."""
     image = cv2.imread(str(image_path))
     if image is None:
         raise ValueError(f"Failed to read image: {image_path}")
@@ -21,6 +26,7 @@ def compute_blur_score(image_path: Path) -> float:
 
 
 def filter_blur(raw_dir: Path, intermediate_dir: Path, blur_threshold: float) -> dict:
+    """扫描全部原始帧, 计算 blur_score 并写入 blur_results.json 与 blur_stats.json."""
     if not raw_dir.exists():
         raise FileNotFoundError(f"Raw data directory not found: {raw_dir}")
 
@@ -67,6 +73,7 @@ def filter_blur(raw_dir: Path, intermediate_dir: Path, blur_threshold: float) ->
 
 
 def main() -> None:
+    """命令行入口: 解析参数并执行模糊检测."""
     parser = argparse.ArgumentParser(description="Filter blurry robot camera frames.")
     add_common_args(parser)
     args = parser.parse_args()

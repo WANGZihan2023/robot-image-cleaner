@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Merge blur and dedup results into metadata.csv."""
+"""汇总 metadata: 合并 blur 与 dedup 两阶段结果, 输出 metadata.csv.
+
+合并规则:
+  1. 以 blur_results.json 为全量基准 (每帧一行)
+  2. blur 已剔除 -> reason 保持 blur
+  3. blur 通过但 dedup 判重复 -> 覆盖为 duplicate
+"""
 
 from __future__ import annotations
 
@@ -18,6 +24,7 @@ def build_metadata(
     plot: bool = False,
     reports_dir: Path | None = None,
 ) -> pd.DataFrame:
+    """合并 blur 与 dedup 结果, 输出 metadata.csv, 可选生成统计图."""
     blur_path = intermediate_dir / "blur_results.json"
     dedup_path = intermediate_dir / "dedup_results.json"
     if not blur_path.exists():
@@ -39,6 +46,7 @@ def build_metadata(
 
             is_valid = blur_record["is_valid"]
             reason = blur_record["reason"]
+            # dedup 阶段才会产生 duplicate 标记
             if blur_record["is_valid"] and not dedup_record.get("is_valid", True):
                 is_valid = False
                 reason = dedup_record.get("reason", "duplicate")
@@ -99,6 +107,7 @@ def build_metadata(
 
 
 def main() -> None:
+    """命令行入口: 解析参数并生成 metadata.csv."""
     parser = argparse.ArgumentParser(description="Build metadata.csv from pipeline results.")
     add_common_args(parser)
     parser.add_argument("--output-csv", type=Path, default=Path("metadata.csv"))

@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Run the full robot image cleaning pipeline."""
+"""一键编排完整清洗 pipeline.
+
+执行顺序: generate_mock_data -> filter_blur -> dedup_frames -> build_metadata
+各子脚本也可独立运行, 便于调试和模块化展示.
+"""
 
 from __future__ import annotations
 
@@ -13,6 +17,7 @@ from pipeline_common import add_common_args, load_json
 
 
 def run_step(command: list[str]) -> None:
+    """以子进程方式执行单个 pipeline 步骤, 失败时抛出异常."""
     print(f"\n>>> {' '.join(command)}")
     subprocess.run(command, check=True)
 
@@ -28,8 +33,10 @@ def run_pipeline(
     plot: bool,
     output_csv: Path,
 ) -> None:
+    """按顺序串联生成数据, 模糊检测, 去重, metadata 四个阶段."""
     script_dir = Path(__file__).resolve().parent
     python = sys.executable
+    # 统一参数透传给各子脚本, 保证路径和阈值一致
     common = [
         "--raw-dir",
         str(raw_dir),
@@ -76,6 +83,7 @@ def run_pipeline(
 
 
 def main() -> None:
+    """命令行入口: 解析参数并一键运行完整 pipeline."""
     parser = argparse.ArgumentParser(description="Run the robot image cleaning pipeline.")
     add_common_args(parser)
     parser.add_argument("--skip-generate", action="store_true")
